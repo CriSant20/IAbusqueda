@@ -1,23 +1,35 @@
 import flet as ft
 import subprocess
+import os
 
 def run_app_py(search_type):
     try:
+        # Mapeo de la opción seleccionada con el script correspondiente y los argumentos necesarios
         search_type_map = {
-            "Búsqueda por Anchura": "anchura",
-            "Búsqueda por Profundidad": "profundidad",
-            "Búsqueda por Profundidad Iterativa": "profundidad_iterativa",
-            "Búsqueda Bidireccional": "bidireccional",
+            "Búsqueda por Anchura": ("app.py", "anchura"),
+            "Búsqueda por Profundidad": ("Profundidad.py", "profundidad"),
+            "Búsqueda por Profundidad Iterativa": ("ProfundidadIterativa.py", "profundidad_iterativa"),
+            "Búsqueda Bidireccional": ("bidireccional.py", "bidireccional"),
         }
-        search_type_argument = search_type_map.get(search_type, "anchura")
 
+        # Obtener el nombre del script y el argumento correspondiente
+        script_name, search_type_argument = search_type_map.get(search_type, ("app.py", "anchura"))
+
+        # Especificar la ruta completa de la carpeta donde se encuentran los scripts
+        script_path = os.path.join("C:/Users/moyol/OneDrive/Documentos/IA/BusquedasNoInformadas/IAbusqueda", script_name)
+
+        # Verificar si el archivo existe antes de ejecutarlo
+        if not os.path.isfile(script_path):
+            return f"Error: No se encontró el archivo {script_path}"
+
+        # Ejecutar el script correspondiente con el argumento del tipo de búsqueda
         result = subprocess.run(
-            ['python', 'app.py', search_type_argument],
+            ['python', script_path, search_type_argument],
             capture_output=True, text=True, check=True
         )
         return result.stdout
     except subprocess.CalledProcessError as e:
-        return f"Error ejecutando app.py: {e.stderr}"
+        return f"Error ejecutando {script_name}: {e.stderr}"
 
 def main(page: ft.Page):
     page.title = "Interfaz de Ovejas y Lobos"
@@ -53,21 +65,18 @@ def main(page: ft.Page):
     def on_menu_change(e):
         search_type = menu.value
         if search_type:
+            # Ejecutar el script correspondiente y obtener la salida
             output = run_app_py(search_type)
-            list_view.controls = [
-                ft.Text(f"Resultados de {search_type}:", color="white"),
-                ft.Text(output, color="white"),
-            ]
+            # Agregar los resultados al ListView sin eliminar los anteriores
+            list_view.controls.append(ft.Text(f"Resultados de {search_type}:", color="white"))
+            list_view.controls.append(ft.Text(output, color="white"))
             page.update()
 
     menu.on_change = on_menu_change
 
     page.add(
         ft.Row(
-            controls=[
-                panel_menu,
-                list_view
-            ],
+            controls=[panel_menu, list_view],
             alignment=ft.MainAxisAlignment.START,
         )
     )
