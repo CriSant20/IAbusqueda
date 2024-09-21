@@ -3,159 +3,167 @@ import matplotlib.pyplot as plt
 from collections import deque
 import time
 import psutil
-import sys
-import os
 
-class Estado:
-    def __init__(self, ovejas, lobos, bote_izquierda):
-        self.ovejas = ovejas
-        self.lobos = lobos
-        self.bote_izquierda = bote_izquierda
+class Nodo:
+    def __init__(self, estado, padre=None, accion=None, id=None, valido=True):
+        self.estado = estado
+        self.padre = padre
+        self.accion = accion
+        self.hijos = []
+        self.id = id
+        self.valido = valido
 
-    def es_valido(self):
-        return (0 <= self.ovejas <= 3 and 0 <= self.lobos <= 3 and
-                (self.ovejas == 0 or self.ovejas >= self.lobos) and
-                (3 - self.ovejas == 0 or (3 - self.ovejas) >= (3 - self.lobos)))
+    def agregar_hijo(self, hijo):
+        self.hijos.append(hijo)
 
-    def es_final(self):
-        return self.ovejas == 0 and self.lobos == 0 and not self.bote_izquierda
+def validar_estado(estado):
+    o_izq, l_izq, b, o_der, l_der = estado
+    if o_izq < 0 or l_izq < 0 or o_der < 0 or l_der < 0:
+        return False
+    if o_izq > 3 or l_izq > 3 or o_der > 3 or l_der > 3:
+        return False
+    if (o_izq > 0 and o_izq < l_izq):
+        return False
+    if (o_der > 0 and o_der < l_der):
+        return False
+    return True
 
-    def __eq__(self, other):
-        return (self.ovejas, self.lobos, self.bote_izquierda) == (other.ovejas, other.lobos, other.bote_izquierda)
+def generar_acciones():
+    return [(1, 0), (2, 0), (0, 1), (0, 2), (1, 1)]
 
-    def __hash__(self):
-        return hash((self.ovejas, self.lobos, self.bote_izquierda))
+def expandir_nodo(nodo, node_id_counter, estados_generados):
+    acciones = generar_acciones()
+    hijos = []
+    for accion in acciones:
+        do, dl = accion
+        if nodo.estado[2] == 1:  # Barco en la izquierda
+            nuevo_estado = (nodo.estado[0] - do, nodo.estado[1] - dl, 0,
+                            nodo.estado[3] + do, nodo.estado[4] + dl)
+        else:  # Barco en la derecha
+            nuevo_estado = (nodo.estado[0] + do, nodo.estado[1] + dl, 1,
+                            nodo.estado[3] - do, nodo.estado[4] - dl)
+        es_valido = validar_estado(nuevo_estado)
+        nuevo_nodo = Nodo(nuevo_estado, padre=nodo, accion=accion, id=node_id_counter, valido=es_valido)
+        nodo.agregar_hijo(nuevo_nodo)
+        estados_generados.add(nuevo_estado)
+        hijos.append(nuevo_nodo)
+        node_id_counter += 1
+    return hijos, node_id_counter
 
-    def __str__(self):
-        bote_posicion = "Izquierda" if self.bote_izquierda else "Derecha"
-        return f"Ovejas: {self.ovejas}, Lobos: {self.lobos}, Bote: {bote_posicion}"
+def bfs(nodo_raiz):
+    inicio_tiempo = time.time()
+    proceso = psutil.Process()
+    memoria_inicial = proceso.memory_info().rss
 
-    def to_id(self):
-        return f"{self.ovejas}_{self.lobos}_{'Izquierda' if self.bote_izquierda else 'Derecha'}"
+    frontera = deque([nodo_raiz])
+    estados_visitados = set()
+    estados_visitados.add(nodo_raiz.estado)
+    estados_generados = set()
+    estados_generados.add(nodo_raiz.estado)
+    nodos_visitados = 1
+    node_id_counter = 1
 
-def expandir_estado(estado):
-    movimientos = [(1, 0), (2, 0), (0, 1), (0, 2), (1, 1)]
-    sucesores = []
+    all_nodes = [nodo_raiz]
+    all_edges = []
+    soluciones = []
 
-    for o, l in movimientos:
-        if estado.bote_izquierda:
-            nuevo_estado = Estado(estado.ovejas - o, estado.lobos - l, False)
+    while frontera:
+        nodo_actual = frontera.popleft()
+        hijos, node_id_counter = expandir_nodo(nodo_actual, node_id_counter, estados_generados)
+        for hijo in hijos:
+            all_nodes.append(hijo)
+            all_edges.append((nodo_actual.id, hijo.id))
+            if hijo.valido:
+                if hijo.estado not in estados_visitados:
+                    frontera.append(hijo)
+                    estados_visitados.add(hijo.estado)
+                    nodos_visitados += 1
+                    if hijo.estado == (0, 0, 0, 3, 3):
+                        soluciones.append(hijo)
+
+    fin_tiempo = time.time()
+    tiempo_total = fin_tiempo - inicio_tiempo
+    memoria_final = proceso.memory_info().rss
+    memoria_consumida = memoria_final - memoria_inicial
+
+    return soluciones, nodos_visitados, all_nodes, all_edges, memoria_consumida, tiempo_total
+
+def encontrar_camino(solucion):
+    camino = []
+    nodo = solucion
+    while nodo:
+        camino.append(nodo)
+        nodo = nodo.padre
+    return camino[::-1]  # Invertir para obtener el camino desde la raíz
+
+def dibujar_grafo(all_nodes, all_edges, soluciones):
+    G = nx.DiGraph()
+
+    for nodo in all_nodes:
+        G.add_node(nodo.id, label=str(nodo.estado))
+
+    for parent_id, child_id in all_edges:
+        G.add_edge(parent_id, child_id)
+
+    # Simulamos un layout jerárquico basado en niveles de profundidad en el árbol
+    levels = {}
+    
+    def asignar_niveles(nodo, depth=0):
+        if depth not in levels:
+            levels[depth] = []
+        levels[depth].append(nodo.id)
+        for hijo in nodo.hijos:
+            asignar_niveles(hijo, depth + 1)
+
+    asignar_niveles(all_nodes[0])
+
+    pos = {}
+    for depth, ids in levels.items():
+        for i, node_id in enumerate(ids):
+            pos[node_id] = (i, -depth)
+
+    labels = nx.get_node_attributes(G, 'label')
+
+    plt.figure(figsize=(12, 8))
+    
+    # Colores para nodos
+    color_map = []
+    for nodo in all_nodes:
+        if nodo in soluciones:
+            color_map.append('green')  # Nodo en el camino de solución
+        elif not nodo.valido:
+            color_map.append('red')  # Nodo estéril
         else:
-            nuevo_estado = Estado(estado.ovejas + o, estado.lobos + l, True)
+            color_map.append('lightgreen')  # Nodos válidos
 
-        if nuevo_estado.es_valido():
-            sucesores.append(nuevo_estado)
+    nx.draw(G, pos, with_labels=True, labels=labels, node_color=color_map, node_size=2000, font_size=10, font_weight='bold', arrows=True)
+    plt.title("Árbol de Búsqueda Jerárquico - Ovejas y Lobos")
+    plt.show()
 
-    return sucesores
+def main():
+    estado_inicial = (3, 3, 1, 0, 0)
+    nodo_raiz = Nodo(estado_inicial, id=0)
+    soluciones, nodos_visitados, all_nodes, all_edges, memoria_consumida, tiempo_total = bfs(nodo_raiz)
 
-def guardar_arbol(arbol, caminos, nodos_expandidos, nodos_esteriles, archivo):
-    pos = nx.spring_layout(arbol)  # Utiliza el diseño por defecto de networkx
-    plt.figure(figsize=(10, 6))
-
-    # Dibujar todos los nodos y conexiones
-    nx.draw(arbol, pos, with_labels=True, node_size=300, font_size=8, font_weight="bold", node_color="lightblue")
-
-    # Resaltar los nodos expandidos en verde
-    nx.draw_networkx_nodes(arbol, pos, nodelist=nodos_expandidos, node_color='green', node_size=300)
-
-    # Resaltar los nodos estériles en rojo
-    if nodos_esteriles:
-        nx.draw_networkx_nodes(arbol, pos, nodelist=nodos_esteriles, node_color='red', node_size=300)
-
-    plt.savefig(archivo)  # Guarda la imagen en el archivo
-    plt.close()  # Cierra la figura para liberar memoria
-
-def buscar_todas_las_soluciones(estado_inicial, objetivo, tipo_busqueda):
-    start_time = time.time()  # Tiempo inicial
-
-    if tipo_busqueda == "profundidad":
-        # Crear carpeta para guardar las imágenes
-        if not os.path.exists("profundidad"):
-            os.makedirs("profundidad")
-
-        frontera = deque([[estado_inicial]])  # Usamos una pila (deque) para DFS
-        visitados = set()
-        arbol = nx.DiGraph()
-        caminos = {}
-        nodos_esteriles = []  # Lista para nodos estériles
-        soluciones = []
-        nodos_expandidos = []
-
-        image_files = []  # Lista para archivos de imágenes
-
-        while frontera:
-            camino = frontera.pop()  # Pop del final de la lista (LIFO)
-            estado_actual = camino[-1]
-
-            # Agregar nodo expandido a la lista
-            nodos_expandidos.append(estado_actual.to_id())
-
-            # Imprimir el estado actual antes de expandir
-            print(f"Expandiendo nodo: {estado_actual}")
-
-            visitados.add(estado_actual)
-
-            sucesores = expandir_estado(estado_actual)
-            if not sucesores:
-                nodos_esteriles.append(estado_actual.to_id())  # Marcar como nodo estéril si no hay sucesores
-
-            for sucesor in sucesores:
-                if sucesor not in visitados:
-                    nuevo_camino = list(camino)
-                    nuevo_camino.append(sucesor)
-                    frontera.append(nuevo_camino)
-                    arbol.add_edge(estado_actual.to_id(), sucesor.to_id())
-                    caminos[(estado_actual.to_id(), sucesor.to_id())] = (estado_actual, sucesor)
-
-            # Guardar el árbol actualizado con nodos expandidos y nodos estériles
-            image_file = os.path.join("profundidad", f"arbol_{estado_actual.to_id()}.png")
-            guardar_arbol(arbol, caminos, nodos_expandidos, nodos_esteriles, image_file)
-            image_files.append(image_file)
-
-            if estado_actual == objetivo:
-                soluciones.append(camino)
-                continue  # Continúa buscando más soluciones
-
-        elapsed_time = time.time() - start_time  # Tiempo transcurrido
-        memory_usage = psutil.Process().memory_info().rss / 1024 / 1024  # Uso de memoria en MB
-
-        return soluciones, arbol, caminos, elapsed_time, memory_usage, image_files
-
-    else:
-        raise ValueError("Tipo de búsqueda no válido")
-
-def mostrar_camino(camino):
-    resultado = ""
-    for estado in camino:
-        resultado += f"{estado}\n"
-    return resultado
-
-def imprimir_todas_las_soluciones(soluciones, arbol, caminos):
-    resultado = ""
-    for idx, camino in enumerate(soluciones):
-        resultado += f"\nSolución {idx + 1}:\n"
-        resultado += mostrar_camino(camino)
-    return resultado
-
-def main(tipo_busqueda):
-    estado_inicial = Estado(3, 3, True)
-    estado_objetivo = Estado(0, 0, False)
-
-    print("\nBúsqueda por Profundidad:")
-    soluciones, arbol_profundidad, caminos, elapsed_time, memory_usage, image_files = buscar_todas_las_soluciones(estado_inicial, estado_objetivo, tipo_busqueda)
     if soluciones:
-        resultado = imprimir_todas_las_soluciones(soluciones, arbol_profundidad, caminos)
-        resultado += f"\nTiempo de ejecución: {elapsed_time} segundos"
-        resultado += f"\nUso de memoria: {memory_usage:.2f} MB"
+        print("Se encontraron soluciones:")
+        for idx, solucion in enumerate(soluciones):
+            print(f"Solución {idx + 1}:")
+            camino = encontrar_camino(solucion)
+            for step_idx, nodo in enumerate(camino):
+                print(f"Paso {step_idx + 1}: {nodo.estado}")
+            print("---")
     else:
-        resultado = "No se encontró solución."
+        print("No se encontraron soluciones.")
 
-    return resultado
+    # Dibujar el árbol de búsqueda usando networkx
+    dibujar_grafo(all_nodes, all_edges, soluciones)
+
+    print(f"\nMedidas de rendimiento:")
+    print(f"Nodos visitados (válidos): {nodos_visitados}")
+    print(f"Total de nodos generados: {len(all_nodes)}")
+    print(f"Tiempo total de ejecución: {tiempo_total:.4f} segundos")
+    print(f"Memoria RAM total consumida: {memoria_consumida} bytes")
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        tipo_busqueda = sys.argv[1]
-        resultado = main(tipo_busqueda)
-        print(resultado)  # Imprimir en la salida estándar
-    else:
-        print("Debe proporcionar el tipo de búsqueda.")
+    main()

@@ -1,220 +1,141 @@
-import networkx as nx
-import matplotlib.pyplot as plt
-from collections import deque
-import psutil
 import time
-
-class Estado:
-    def __init__(self, ovejas, lobos, bote_izquierda):
-        self.ovejas = ovejas
-        self.lobos = lobos
-        self.bote_izquierda = bote_izquierda
-
-    def es_valido(self):
-        return (0 <= self.ovejas <= 3 and 0 <= self.lobos <= 3 and
-                (self.ovejas == 0 or self.ovejas >= self.lobos) and
-                (3 - self.ovejas == 0 or (3 - self.ovejas) >= (3 - self.lobos)))
-
-    def es_final(self):
-        return self.ovejas == 0 and self.lobos == 0 and not self.bote_izquierda
-
-    def __eq__(self, other):
-        return (self.ovejas, self.lobos, self.bote_izquierda) == (other.ovejas, other.lobos, other.bote_izquierda)
-
-    def __hash__(self):
-        return hash((self.ovejas, self.lobos, self.bote_izquierda))
-
-    def __str__(self):
-        bote_posicion = "Izquierda" if self.bote_izquierda else "Derecha"
-        return f"Lobos: {self.lobos}, Ovejas: {self.ovejas}, Bote: {bote_posicion}"
-
-    def to_id(self):
-        return f"{self.ovejas}{self.lobos}{'Izquierda' if self.bote_izquierda else 'Derecha'}"
-
+import matplotlib.pyplot as plt
+import networkx as nx
+from collections import deque
 
 class Nodo:
-    def __init__(self, estado, padre=None):
+    def __init__(self, estado, padre=None, accion=None, id=None):
         self.estado = estado
         self.padre = padre
+        self.accion = accion
         self.hijos = []
+        self.id = id  # Identificador único para cada nodo
 
     def agregar_hijo(self, hijo):
         self.hijos.append(hijo)
 
+def validar_estado(estado):
+    s_izq, l_izq, b, s_der, l_der = estado
+    if s_izq < 0 or l_izq < 0 or s_der < 0 or l_der < 0:
+        return False
+    if (s_izq > 0 and s_izq < l_izq) or (s_der > 0 and s_der < l_der):
+        return False
+    return True
 
-def expandir_estado(estado):
+def generar_acciones(estado):
+    acciones = []
     movimientos = [(1, 0), (2, 0), (0, 1), (0, 2), (1, 1)]
-    sucesores = []
+    for ds, dl in movimientos:
+        acciones.append((ds, dl))
+    return acciones
 
-    for o, l in movimientos:
-        if estado.bote_izquierda:
-            nuevo_estado = Estado(estado.ovejas - o, estado.lobos - l, False)
+def expandir_nodo(nodo):
+    acciones = generar_acciones(nodo.estado)
+    for accion in acciones:
+        ds, dl = accion
+        if nodo.estado[2] == 1:
+            nuevo_estado = (nodo.estado[0] - ds, nodo.estado[1] - dl, 0,
+                            nodo.estado[3] + ds, nodo.estado[4] + dl)
         else:
-            nuevo_estado = Estado(estado.ovejas + o, estado.lobos + l, True)
+            nuevo_estado = (nodo.estado[0] + ds, nodo.estado[1] + dl, 1,
+                            nodo.estado[3] - ds, nodo.estado[4] - dl)
+        nuevo_nodo = Nodo(nuevo_estado, padre=nodo, accion=accion)
+        if validar_estado(nuevo_estado):
+            nodo.agregar_hijo(nuevo_nodo)
+    return nodo.hijos
 
-        if nuevo_estado.es_valido():
-            sucesores.append(nuevo_estado)
+def bfs_with_visualizacion(nodo_inicial):
+    inicio_tiempo = time.time()
+    frontera = deque()
+    frontera.append(nodo_inicial)
+    visitados = set()
+    visitados.add(nodo_inicial.estado)
+    nodos_expandidos = 0
 
-    return sucesores
+    G = nx.DiGraph()
+    pos = {}
+    node_counter = 0
 
+    nodo_inicial.id = str(node_counter)
+    node_counter += 1
+    G.add_node(nodo_inicial.id, label=str(nodo_inicial.estado))
+    pos[nodo_inicial.id] = (0, 0)  # Posición inicial
 
-def mostrar_arbol_con_matplotlib(arbol, nodos_expandidos, nodos_esteriles):
-    pos = nx.spring_layout(arbol)
-    plt.figure(figsize=(10, 6))
+    while frontera:
+        nodo_actual = frontera.popleft()
+        nodos_expandidos += 1
 
-    nx.draw(arbol, pos, with_labels=True, node_size=300, font_size=8, font_weight="bold", node_color="lightblue", edge_color="gray")
+        if nodo_actual.estado == (0, 0, 0, 3, 3):
+            fin_tiempo = time.time()
+            tiempo_ejecucion = (fin_tiempo - inicio_tiempo) * 1000  # Convertir a milisegundos
+            return nodo_actual, nodos_expandidos, tiempo_ejecucion, G, pos
 
-    nx.draw_networkx_nodes(arbol, pos, nodelist=nodos_expandidos, node_color='green', node_size=300)
+        hijos = expandir_nodo(nodo_actual)
 
-    if nodos_esteriles:
-        nx.draw_networkx_nodes(arbol, pos, nodelist=nodos_esteriles, node_color='red', node_size=300)
+        depth = get_depth(nodo_actual) + 1
 
+        for hijo in hijos:
+            if hijo.estado not in visitados:
+                hijo.id = str(node_counter)
+                node_counter += 1
+
+                frontera.append(hijo)
+                visitados.add(hijo.estado)
+
+                G.add_node(hijo.id, label=str(hijo.estado))
+                G.add_edge(nodo_actual.id, hijo.id)
+
+                # Ajustar posición de los nodos
+                x = depth * 2  # Separación en el eje x
+                y = len(hijos) * -1  # Separación en el eje y
+                pos[hijo.id] = (x, y + (depth * 0.5))
+
+    return None, nodos_expandidos, None, G, pos
+
+def get_depth(nodo):
+    depth = 0
+    while nodo.padre:
+        nodo = nodo.padre
+        depth += 1
+    return depth
+
+def imprimir_camino(nodo):
+    camino = []
+    while nodo:
+        camino.append(nodo.estado)
+        nodo = nodo.padre
+    camino.reverse()
+    for idx, estado in enumerate(camino):
+        s_izq, l_izq, b, s_der, l_der = estado
+        print(f"Paso {idx + 1}: Ovejas Izquierda: {s_izq}, Lobos Izquierda: {l_izq}, Barco: {'Izquierda' if b == 1 else 'Derecha'}, Ovejas Derecha: {s_der}, Lobos Derecha: {l_der}")
+
+def dibujar_grafo(G, pos):
+    labels = nx.get_node_attributes(G, 'label')
+    plt.figure(figsize=(12, 8))
+    nx.draw(G, pos, with_labels=True, labels=labels, node_size=3000, node_color='lightgreen', font_size=10, font_weight='bold', arrows=True)
+    plt.title("Árbol de búsqueda - Ovejas y Lobos", fontsize=15)
+    plt.axis('off')  # Ocultar ejes
+    plt.tight_layout()  # Ajustar la visualización
     plt.show()
 
+def main():
+    estado_inicial = (3, 3, 1, 0, 0)
+    nodo_raiz = Nodo(estado_inicial)
+    solucion, nodos_expandidos, tiempo_ejecucion, G, pos = bfs_with_visualizacion(nodo_raiz)
 
-def depth_limited_search(nodo_actual, depth_limit, path, arbol, caminos, nodos_expandidos, nodos_esteriles):
-    estado_actual = nodo_actual.estado
+    if solucion:
+        
+        print("Se encontró una solución:")
+        imprimir_camino(solucion)
+        print(f"\nMedidas de rendimiento:")
+        print(f"Nodos expandidos: {nodos_expandidos}")
+        print(f"Tiempo de ejecución: {tiempo_ejecucion:.2f} ms")
+        print(f"Memoria RAM total consumida: {memoria_consumida} bytes")
 
-    nodos_expandidos.append(estado_actual.to_id())
-
-    print(f"Expandiendo nodo: {estado_actual}")
-
-    if estado_actual.es_final():
-        return [path + [nodo_actual]]
-
-    if depth_limit == 0:
-        return []
-
-    soluciones_locales = []
-    sucesores = expandir_estado(estado_actual)
-
-    if not sucesores:
-        nodos_esteriles.append(estado_actual.to_id())
-
-    for sucesor in sucesores:
-        if sucesor not in [nodo.estado for nodo in path]:
-            nuevo_nodo = Nodo(sucesor, nodo_actual)
-            nodo_actual.agregar_hijo(nuevo_nodo)
-            arbol.add_edge(estado_actual.to_id(), sucesor.to_id())
-            caminos[(estado_actual.to_id(), sucesor.to_id())] = (estado_actual, sucesor)
-
-            soluciones_hijo = depth_limited_search(
-                nuevo_nodo, depth_limit - 1, path + [nodo_actual], arbol, caminos, nodos_expandidos, nodos_esteriles
-            )
-
-            soluciones_locales.extend(soluciones_hijo)
-
-    return soluciones_locales
-
-
-def buscar_todas_las_soluciones(estado_inicial, objetivo, tipo_busqueda):
-    start_time = time.time()
-
-    if tipo_busqueda == "anchura":
-        frontera = deque([[Nodo(estado_inicial)]])
-        visitados = set()
-        arbol = nx.DiGraph()
-        caminos = {}
-        nodos_esteriles = []
-        soluciones = []
-        nodos_expandidos = []
-
-        while frontera:
-            camino = frontera.popleft()
-            nodo_actual = camino[-1]
-            estado_actual = nodo_actual.estado
-
-            nodos_expandidos.append(estado_actual.to_id())
-
-            print(f"Expandiendo nodo: {estado_actual}")
-
-            visitados.add(estado_actual)
-
-            sucesores = expandir_estado(estado_actual)
-            if not sucesores:
-                nodos_esteriles.append(estado_actual.to_id())
-
-            for sucesor in sucesores:
-                if sucesor not in visitados:
-                    nuevo_nodo = Nodo(sucesor, nodo_actual)
-                    nodo_actual.agregar_hijo(nuevo_nodo)
-                    nuevo_camino = list(camino)
-                    nuevo_camino.append(nuevo_nodo)
-                    frontera.append(nuevo_camino)
-                    arbol.add_edge(estado_actual.to_id(), sucesor.to_id())
-                    caminos[(estado_actual.to_id(), sucesor.to_id())] = (estado_actual, sucesor)
-
-            mostrar_arbol_con_matplotlib(arbol, nodos_expandidos, nodos_esteriles)
-
-            if estado_actual.es_final():
-                soluciones.append(camino)
-                continue
-
-        elapsed_time = time.time() - start_time
-        process = psutil.Process()
-        memory_usage = process.memory_info().rss / (1024 * 1024)
-
-        return soluciones, arbol, caminos, elapsed_time, memory_usage
-
-    elif tipo_busqueda == "profundidad_iterativa":
-        max_depth = 20
-        soluciones = []
-        arbol = nx.DiGraph()
-        caminos = {}
-        nodos_expandidos = []
-        nodos_esteriles = []
-
-        for depth_limit in range(1, max_depth + 1):
-            print(f"Profundidad límite: {depth_limit}")
-            nodos_expandidos_current = []
-            nodos_esteriles_current = []
-
-            soluciones_depth = depth_limited_search(
-                Nodo(estado_inicial), depth_limit, [], arbol, caminos, nodos_expandidos_current, nodos_esteriles_current
-            )
-
-            if soluciones_depth:
-                soluciones.extend(soluciones_depth)
-                nodos_expandidos.extend(nodos_expandidos_current)
-                nodos_esteriles.extend(nodos_esteriles_current)
-
-                mostrar_arbol_con_matplotlib(arbol, nodos_expandidos, nodos_esteriles)
-                break
-
-        elapsed_time = time.time() - start_time
-        process = psutil.Process()
-        memory_usage = process.memory_info().rss / (1024 * 1024)
-
-        return soluciones, arbol, caminos, elapsed_time, memory_usage
-
+        # Dibujar el árbol de búsqueda
+        dibujar_grafo(G, pos)
     else:
-        raise ValueError("Tipo de búsqueda no válido")
-
-
-def mostrar_camino(camino):
-    for nodo in camino:
-        print(nodo.estado)
-
-
-def imprimir_todas_las_soluciones(soluciones, arbol, caminos):
-    for idx, camino in enumerate(soluciones):
-        print(f"\nSolución {idx + 1}:")
-        mostrar_camino(camino)
-        print()
-
+        print("No se encontró una solución.")
 
 if __name__ == "__main__":
-    estado_inicial = Estado(3, 3, True)
-    estado_objetivo = Estado(0, 0, False)
-
-    print("\nBúsqueda por Profundidad Iterativa:")
-    soluciones, arbol, caminos, elapsed_time, memory_usage = buscar_todas_las_soluciones(
-        estado_inicial, estado_objetivo, "profundidad_iterativa"
-    )
-
-    if soluciones:
-        imprimir_todas_las_soluciones(soluciones, arbol, caminos)
-        print(f"Tiempo de ejecución: {elapsed_time} segundos")
-        print(f"Uso de memoria: {memory_usage} MB")
-    else:
-        print("No se encontró solución.")
+    main()

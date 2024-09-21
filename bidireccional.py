@@ -1,8 +1,8 @@
 import time
 import psutil  # Para medir el consumo de memoria
+from collections import deque, defaultdict
 import networkx as nx
 import matplotlib.pyplot as plt
-from collections import deque, defaultdict
 
 # Variables globales para asignar IDs y almacenar nodos y aristas
 node_counter = 0
@@ -23,10 +23,9 @@ def create_node(estado, padre=None, node_type='default'):
         depth = padre.depth + 1
     else:
         depth = 0
-    o_izq, l_izq, b, o_der, l_der = estado
     node = Nodo(estado, padre, id=node_counter, depth=depth, node_type=node_type)
-    # Añadir nodo a nodes_data con una etiqueta más descriptiva
-    node_label = f"O.Izq: {o_izq}, L.Izq: {l_izq}, B: {'Izq' if b == 1 else 'Der'}, O.Der: {o_der}, L.Der: {l_der}"
+    # Añadir nodo a nodes_data
+    node_label = str(estado)
     nodes_data.append({
         'id': str(node.id),
         'label': node_label,
@@ -143,29 +142,34 @@ def assign_positions(nodes_data):
         depth_dict[depth].append(node)
 
     for depth, nodes in depth_dict.items():
-        y_spacing = 100
-        x = depth * 200
+        x_spacing = 100  # Espaciado entre nodos a la misma profundidad
+        y = -depth * 200  # La profundidad determina la posición en y (vertical)
         num_nodes = len(nodes)
-        total_height = (num_nodes - 1) * y_spacing
-        y_start = -total_height / 2
+        total_width = (num_nodes - 1) * x_spacing
+        x_start = -total_width / 2
         for i, node in enumerate(nodes):
-            y = y_start + i * y_spacing
-            node['pos'] = (x, y)
+            x = x_start + i * x_spacing
+            node['pos'] = (x, y)  # x será la coordenada horizontal y y será la vertical
     return nodes_data
 
-def plot_graph(nodes_data, edges_data):
+def dibujar_grafo():
     G = nx.DiGraph()
 
+    # Agregar nodos
+    pos = {}
     for node in nodes_data:
         G.add_node(node['id'], label=node['label'])
+        pos[node['id']] = node['pos']
 
+    # Agregar aristas
     for edge in edges_data:
         G.add_edge(edge['source'], edge['target'])
 
-    pos = {node['id']: node['pos'] for node in nodes_data}
     labels = nx.get_node_attributes(G, 'label')
-    nx.draw(G, pos, with_labels=True, labels=labels, node_size=3000, node_color='lightblue', font_size=10, font_weight='bold', arrows=True)
-    plt.title("Árbol de Búsqueda")
+
+    plt.figure(figsize=(12, 8))
+    nx.draw(G, pos, with_labels=True, labels=labels, node_color='lightblue', node_size=2000, font_size=10, font_weight='bold', arrows=True)
+    plt.title("Árbol de Búsqueda - Ovejas y Lobos")
     plt.show()
 
 def main():
@@ -194,23 +198,25 @@ def main():
 
     if solucion_desde_inicial and solucion_desde_final:
         camino_total = reconstruir_camino(solucion_desde_inicial, solucion_desde_final)
-        print("### Se encontró una solución:")
-        print("*Camino:*")
+        print("Se encontró una solución:")
+        print("Camino:")
         for idx, estado in enumerate(camino_total):
             o_izq, l_izq, b, o_der, l_der = estado
-            lado_barco = "izquierda" if b == 1 else "derecha"
-            print(f"Paso {idx+1}: Ovejas izquierda: {o_izq}, Lobos izquierda: {l_izq}, "
-                  f"Barco: {lado_barco}, Ovejas derecha: {o_der}, Lobos derecha: {l_der}")
+            lado_barco = 'Izquierda' if b == 1 else 'Derecha'
+            print(f"Paso {idx + 1}: Ovejas Izq: {o_izq}, Lobos Izq: {l_izq}, Barco: {lado_barco}, Ovejas Der: {o_der}, Lobos Der: {l_der}")
+
+        print("\nMedidas de rendimiento:")
+        print(f"- Nodos visitados: {nodos_visitados}")
+        print(f"- Tiempo de ejecución: {tiempo_ejecucion:.2f} ms")
+        print(f"- Memoria RAM consumida: {memoria_consumida:.2f} MB")
     else:
-        print("No se encontró solución.")
+        print("No se encontró una solución.")
 
-    print(f"\n### Tiempo de ejecución: {tiempo_ejecucion:.2f} ms")
-    print(f"### Memoria consumida: {memoria_consumida:.2f} MB")
-    print(f"### Nodos visitados: {nodos_visitados}")
-
-    # Asignar posiciones a los nodos y mostrar el gráfico
+    # Asignar posiciones a los nodos
     nodes_data = assign_positions(nodes_data)
-    plot_graph(nodes_data, edges_data)
+
+    # Dibujar el grafo
+    dibujar_grafo()
 
 if __name__ == "__main__":
     main()
