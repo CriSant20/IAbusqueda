@@ -79,6 +79,7 @@ def bfs(nodo_raiz):
                     estados_visitados.add(hijo.estado)
                     nodos_visitados += 1
                     if hijo.estado == (0, 0, 0, 3, 3):
+                        # Guardar el camino completo a la solución
                         soluciones.append(hijo)
 
     fin_tiempo = time.time()
@@ -97,7 +98,6 @@ def dibujar_grafo(all_nodes, all_edges):
     for parent_id, child_id in all_edges:
         G.add_edge(parent_id, child_id)
 
-    # Simulamos un layout jerárquico basado en niveles de profundidad en el árbol
     levels = {}
     def asignar_niveles(nodo, depth=0):
         if depth not in levels:
@@ -111,7 +111,7 @@ def dibujar_grafo(all_nodes, all_edges):
     pos = {}
     for depth, ids in levels.items():
         for i, node_id in enumerate(ids):
-            pos[node_id] = (i, -depth)  # Distribuye los nodos horizontalmente y los organiza por niveles verticalmente
+            pos[node_id] = (i, -depth)
 
     labels = nx.get_node_attributes(G, 'label')
 
@@ -137,18 +137,18 @@ def main():
             camino.reverse()
             for step_idx, estado in enumerate(camino):
                 print(f"Paso {step_idx + 1}: {estado}")
-            print("---")
+            print("************************************")
     else:
         print("No se encontraron soluciones.")
-
-    # Dibujar el árbol de búsqueda usando networkx
-    dibujar_grafo(all_nodes, all_edges)
 
     print(f"\nMedidas de rendimiento:")
     print(f"Nodos visitados (válidos): {nodos_visitados}")
     print(f"Total de nodos generados: {len(all_nodes)}")
     print(f"Tiempo total de ejecución: {tiempo_total:.4f} segundos")
-    print(f"Memoria RAM total consumida: {memoria_consumida/ 1024:.2f} bytes")
+    print(f"Memoria RAM total consumida: {memoria_consumida / 1024:.2f} bytes")
+
+    # Ahora dibujar el árbol de búsqueda usando networkx
+    dibujar_grafo(all_nodes, all_edges)
 
 if __name__ == "__main__":
     main()
