@@ -134,7 +134,7 @@ def main():
         imprimir_camino(solucion)
         print(f"Nodos expandidos: {nodos_expandidos}")
         print(f"Tiempo de ejecución: {tiempo_ejecucion:.4f} ms")
-        print(f"Memoria RAM total consumida: {memoria_consumida/ 1024:.2f} bytes")
+        print(f"Memoria RAM total consumida: {memoria_consumida/ 1024:.4f} bytes")
 
         # Dibujar el árbol de búsqueda
         dibujar_grafo(G, pos)

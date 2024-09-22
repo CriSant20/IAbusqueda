@@ -19,11 +19,9 @@ class Nodo:
 
 def create_node(estado, padre=None, node_type='default'):
     global node_counter
-    if padre:
-        depth = padre.depth + 1
-    else:
-        depth = 0
+    depth = padre.depth + 1 if padre else 0
     node = Nodo(estado, padre, id=node_counter, depth=depth, node_type=node_type)
+    
     # Añadir nodo a nodes_data
     node_label = str(estado)
     nodes_data.append({
@@ -207,8 +205,8 @@ def main():
 
         print("\nMedidas de rendimiento:")
         print(f"- Nodos visitados: {nodos_visitados}")
-        print(f"- Tiempo de ejecución: {tiempo_ejecucion:.2f} ms")
-        print(f"- Memoria RAM consumida: {memoria_consumida/1024:.2f} MB")
+        print(f"- Tiempo de ejecución: {tiempo_ejecucion:.4f} ms")
+        print(f"- Memoria RAM consumida: {memoria_consumida:.4f} MB")
     else:
         print("No se encontró una solución.")
 

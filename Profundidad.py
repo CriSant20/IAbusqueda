@@ -50,12 +50,12 @@ def expandir_nodo(nodo, node_id_counter, estados_generados):
         node_id_counter += 1
     return hijos, node_id_counter
 
-def bfs(nodo_raiz):
+def dfs(nodo_raiz):
     inicio_tiempo = time.time()
     proceso = psutil.Process()
     memoria_inicial = proceso.memory_info().rss
 
-    frontera = deque([nodo_raiz])
+    frontera = [nodo_raiz]  # Usar una pila en lugar de una cola
     estados_visitados = set()
     estados_visitados.add(nodo_raiz.estado)
     estados_generados = set()
@@ -68,7 +68,7 @@ def bfs(nodo_raiz):
     soluciones = []
 
     while frontera:
-        nodo_actual = frontera.popleft()
+        nodo_actual = frontera.pop()  # Sacar el último nodo (LIFO)
         hijos, node_id_counter = expandir_nodo(nodo_actual, node_id_counter, estados_generados)
         for hijo in hijos:
             all_nodes.append(hijo)
@@ -137,13 +137,13 @@ def dibujar_grafo(all_nodes, all_edges, soluciones):
             color_map.append('lightgreen')  # Nodos válidos
 
     nx.draw(G, pos, with_labels=True, labels=labels, node_color=color_map, node_size=2000, font_size=10, font_weight='bold', arrows=True)
-    plt.title("Árbol de Búsqueda Jerárquico - Ovejas y Lobos")
+    plt.title("Árbol de Búsqueda en Profundidad - Ovejas y Lobos")
     plt.show()
 
 def main():
     estado_inicial = (3, 3, 1, 0, 0)
     nodo_raiz = Nodo(estado_inicial, id=0)
-    soluciones, nodos_visitados, all_nodes, all_edges, memoria_consumida, tiempo_total = bfs(nodo_raiz)
+    soluciones, nodos_visitados, all_nodes, all_edges, memoria_consumida, tiempo_total = dfs(nodo_raiz)
 
     if soluciones:
         print("Se encontraron soluciones:")
@@ -163,7 +163,8 @@ def main():
     print(f"Nodos visitados (válidos): {nodos_visitados}")
     print(f"Total de nodos generados: {len(all_nodes)}")
     print(f"Tiempo total de ejecución: {tiempo_total:.4f} segundos")
-    print(f"Memoria RAM total consumida: {memoria_consumida/ 1024:.2f} bytes")
-
+    print(f"Memoria RAM total consumida: {memoria_consumida / 1024:.2f} bytes")
+    
+   
 if __name__ == "__main__":
     main()
