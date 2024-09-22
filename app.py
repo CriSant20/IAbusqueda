@@ -148,7 +148,7 @@ def main():
     print(f"Nodos visitados (válidos): {nodos_visitados}")
     print(f"Total de nodos generados: {len(all_nodes)}")
     print(f"Tiempo total de ejecución: {tiempo_total:.4f} segundos")
-    print(f"Memoria RAM total consumida: {memoria_consumida} bytes")
+    print(f"Memoria RAM total consumida: {memoria_consumida/ 1024:.2f} bytes")
 
 if __name__ == "__main__":
     main()

@@ -208,7 +208,7 @@ def main():
         print("\nMedidas de rendimiento:")
         print(f"- Nodos visitados: {nodos_visitados}")
         print(f"- Tiempo de ejecución: {tiempo_ejecucion:.2f} ms")
-        print(f"- Memoria RAM consumida: {memoria_consumida:.2f} MB")
+        print(f"- Memoria RAM consumida: {memoria_consumida/1024:.2f} MB")
     else:
         print("No se encontró una solución.")
 

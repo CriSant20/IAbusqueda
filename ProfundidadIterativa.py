@@ -2,6 +2,7 @@ import time
 import matplotlib.pyplot as plt
 import networkx as nx
 from collections import deque
+import psutil
 
 class Nodo:
     def __init__(self, estado, padre=None, accion=None, id=None):
@@ -118,19 +119,22 @@ def dibujar_grafo(G, pos):
     plt.tight_layout()  # Ajustar la visualización
     plt.show()
 
+def obtener_memoria_consumida():
+    proceso = psutil.Process()
+    return proceso.memory_info().rss  # En bytes
+
 def main():
     estado_inicial = (3, 3, 1, 0, 0)
     nodo_raiz = Nodo(estado_inicial)
     solucion, nodos_expandidos, tiempo_ejecucion, G, pos = bfs_with_visualizacion(nodo_raiz)
 
     if solucion:
-        
+        memoria_consumida = obtener_memoria_consumida()
         print("Se encontró una solución:")
         imprimir_camino(solucion)
-        print(f"\nMedidas de rendimiento:")
         print(f"Nodos expandidos: {nodos_expandidos}")
-        print(f"Tiempo de ejecución: {tiempo_ejecucion:.2f} ms")
-        print(f"Memoria RAM total consumida: {memoria_consumida} bytes")
+        print(f"Tiempo de ejecución: {tiempo_ejecucion:.4f} ms")
+        print(f"Memoria RAM total consumida: {memoria_consumida/ 1024:.2f} bytes")
 
         # Dibujar el árbol de búsqueda
         dibujar_grafo(G, pos)
