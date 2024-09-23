@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from collections import deque
 import time
 import psutil
+from io import BytesIO  # Para manejar la imagen en memoria
 
 class Nodo:
     def __init__(self, estado, padre=None, accion=None, id=None, valido=True):
@@ -79,7 +80,6 @@ def bfs(nodo_raiz):
                     estados_visitados.add(hijo.estado)
                     nodos_visitados += 1
                     if hijo.estado == (0, 0, 0, 3, 3):
-                        # Guardar el camino completo a la solución
                         soluciones.append(hijo)
 
     fin_tiempo = time.time()
@@ -89,7 +89,7 @@ def bfs(nodo_raiz):
 
     return soluciones, nodos_visitados, all_nodes, all_edges, memoria_consumida, tiempo_total
 
-def dibujar_grafo(all_nodes, all_edges):
+def dibujar_arbol(all_nodes, all_edges, filename="anchura.png"):
     G = nx.DiGraph()
 
     for nodo in all_nodes:
@@ -117,8 +117,11 @@ def dibujar_grafo(all_nodes, all_edges):
 
     plt.figure(figsize=(12, 8))
     nx.draw(G, pos, with_labels=True, labels=labels, node_color='lightgreen', node_size=2000, font_size=10, font_weight='bold', arrows=True)
-    plt.title("Árbol de Búsqueda Jerárquico - Ovejas y Lobos")
-    plt.show()
+    plt.title("Árbol de Búsqueda de Anchura - Ovejas y Lobos")
+
+    # Guardar el gráfico en un archivo
+    plt.savefig(filename)
+    plt.close()  # Cerrar la figura para evitar sobrecarga de memoria
 
 def main():
     estado_inicial = (3, 3, 1, 0, 0)
@@ -147,8 +150,8 @@ def main():
     print(f"Tiempo total de ejecución: {tiempo_total:.4f} segundos")
     print(f"Memoria RAM total consumida: {memoria_consumida / 1024:.2f} bytes")
 
-    # Ahora dibujar el árbol de búsqueda usando networkx
-    dibujar_grafo(all_nodes, all_edges)
+    # Retornar el buffer con la imagen del árbol de búsqueda
+    return dibujar_arbol(all_nodes, all_edges)
 
 if __name__ == "__main__":
     main()

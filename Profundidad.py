@@ -96,7 +96,7 @@ def encontrar_camino(solucion):
         nodo = nodo.padre
     return camino[::-1]  # Invertir para obtener el camino desde la raíz
 
-def dibujar_grafo(all_nodes, all_edges, soluciones):
+def dibujar_arbol(all_nodes, all_edges, soluciones):
     G = nx.DiGraph()
 
     for nodo in all_nodes:
@@ -138,7 +138,12 @@ def dibujar_grafo(all_nodes, all_edges, soluciones):
 
     nx.draw(G, pos, with_labels=True, labels=labels, node_color=color_map, node_size=2000, font_size=10, font_weight='bold', arrows=True)
     plt.title("Árbol de Búsqueda en Profundidad - Ovejas y Lobos")
-    plt.show()
+
+    # Guardar el gráfico como archivo PNG
+    plt.savefig("profundidad.png")
+
+    plt.close()
+
 
 def main():
     estado_inicial = (3, 3, 1, 0, 0)
@@ -157,7 +162,7 @@ def main():
         print("No se encontraron soluciones.")
 
     # Dibujar el árbol de búsqueda usando networkx
-    dibujar_grafo(all_nodes, all_edges, soluciones)
+    dibujar_arbol(all_nodes, all_edges, soluciones)
 
     print(f"\nMedidas de rendimiento:")
     print(f"Nodos visitados (válidos): {nodos_visitados}")

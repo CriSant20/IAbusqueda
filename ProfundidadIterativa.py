@@ -110,14 +110,16 @@ def imprimir_camino(nodo):
         s_izq, l_izq, b, s_der, l_der = estado
         print(f"Paso {idx + 1}: Ovejas Izquierda: {s_izq}, Lobos Izquierda: {l_izq}, Barco: {'Izquierda' if b == 1 else 'Derecha'}, Ovejas Derecha: {s_der}, Lobos Derecha: {l_der}")
 
-def dibujar_grafo(G, pos):
+def dibujar_grafo(G, pos, filename="iterativa.png"):
     labels = nx.get_node_attributes(G, 'label')
     plt.figure(figsize=(12, 8))
     nx.draw(G, pos, with_labels=True, labels=labels, node_size=3000, node_color='lightgreen', font_size=10, font_weight='bold', arrows=True)
     plt.title("Árbol de búsqueda - Ovejas y Lobos", fontsize=15)
-    plt.axis('off')  # Ocultar ejes
-    plt.tight_layout()  # Ajustar la visualización
-    plt.show()
+    plt.axis('off')
+    plt.tight_layout()
+    plt.savefig(filename)  # Guardar la figura como PNG
+    plt.close()  # Cerrar la figura para liberar memoria
+
 
 def obtener_memoria_consumida():
     proceso = psutil.Process()

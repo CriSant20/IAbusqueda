@@ -150,7 +150,7 @@ def assign_positions(nodes_data):
             node['pos'] = (x, y)  # x será la coordenada horizontal y y será la vertical
     return nodes_data
 
-def dibujar_grafo():
+def dibujar_arbol():
     G = nx.DiGraph()
 
     # Agregar nodos
@@ -168,7 +168,12 @@ def dibujar_grafo():
     plt.figure(figsize=(12, 8))
     nx.draw(G, pos, with_labels=True, labels=labels, node_color='lightblue', node_size=2000, font_size=10, font_weight='bold', arrows=True)
     plt.title("Árbol de Búsqueda - Ovejas y Lobos")
-    plt.show()
+
+    # Guardar el gráfico como archivo PNG
+    plt.savefig("bidireccional.png")
+
+    # Mostrar el gráfico
+    plt.close() 
 
 def main():
     global nodes_data, edges_data
@@ -214,7 +219,7 @@ def main():
     nodes_data = assign_positions(nodes_data)
 
     # Dibujar el grafo
-    dibujar_grafo()
+    dibujar_arbol()
 
 if __name__ == "__main__":
     main()
