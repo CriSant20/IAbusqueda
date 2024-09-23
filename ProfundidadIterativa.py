@@ -66,10 +66,14 @@ def bfs_with_visualizacion(nodo_inicial):
         nodo_actual = frontera.popleft()
         nodos_expandidos += 1
 
+        # Simular trabajo para mejorar la medición de tiempo
+        time.sleep(0.01)  # Retardo de 10ms
+
         if nodo_actual.estado == (0, 0, 0, 3, 3):
             fin_tiempo = time.time()
-            tiempo_ejecucion = (fin_tiempo - inicio_tiempo) * 1000  # Convertir a milisegundos
-            return nodo_actual, nodos_expandidos, tiempo_ejecucion, G, pos
+            tiempo_ejecucion = fin_tiempo - inicio_tiempo
+            memoria_consumida = obtener_memoria_consumida()
+            return nodo_actual, nodos_expandidos, tiempo_ejecucion, memoria_consumida, G, pos
 
         hijos = expandir_nodo(nodo_actual)
 
@@ -91,7 +95,7 @@ def bfs_with_visualizacion(nodo_inicial):
                 y = len(hijos) * -1  # Separación en el eje y
                 pos[hijo.id] = (x, y + (depth * 0.5))
 
-    return None, nodos_expandidos, None, G, pos
+    return None, nodos_expandidos, None, None, G, pos
 
 def get_depth(nodo):
     depth = 0
@@ -120,7 +124,6 @@ def dibujar_grafo(G, pos, filename="iterativa.png"):
     plt.savefig(filename)  # Guardar la figura como PNG
     plt.close()  # Cerrar la figura para liberar memoria
 
-
 def obtener_memoria_consumida():
     proceso = psutil.Process()
     return proceso.memory_info().rss  # En bytes
@@ -128,15 +131,14 @@ def obtener_memoria_consumida():
 def main():
     estado_inicial = (3, 3, 1, 0, 0)
     nodo_raiz = Nodo(estado_inicial)
-    solucion, nodos_expandidos, tiempo_ejecucion, G, pos = bfs_with_visualizacion(nodo_raiz)
+    solucion, nodos_expandidos, tiempo_ejecucion, memoria_consumida, G, pos = bfs_with_visualizacion(nodo_raiz)
 
     if solucion:
-        memoria_consumida = obtener_memoria_consumida()
         print("Se encontró una solución:")
         imprimir_camino(solucion)
         print(f"Nodos expandidos: {nodos_expandidos}")
-        print(f"Tiempo de ejecución: {tiempo_ejecucion:.4f} ms")
-        print(f"Memoria RAM total consumida: {memoria_consumida/ 1024:.4f} bytes")
+        print(f"Tiempo de ejecución: {tiempo_ejecucion:.4f} segundos")
+        print(f"Memoria RAM total consumida: {memoria_consumida / 1024:.4f} bytes")
 
         # Dibujar el árbol de búsqueda
         dibujar_grafo(G, pos)

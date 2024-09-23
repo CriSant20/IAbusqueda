@@ -105,12 +105,12 @@ def main(page: ft.Page):
     # Funciones para zoom
     def zoom_in(e):
         nonlocal zoom_level
-        zoom_level *= 2.5  # Aumentar el nivel de zoom (20%)
+        zoom_level *= 1.2  # Aumentar el nivel de zoom
         update_image_size()
 
     def zoom_out(e):
         nonlocal zoom_level
-        zoom_level /= 1.2  # Reducir el nivel de zoom (20%)
+        zoom_level /= 1.2  # Reducir el nivel de zoom
         update_image_size()
 
     def update_image_size():

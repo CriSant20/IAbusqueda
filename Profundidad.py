@@ -69,6 +69,10 @@ def dfs(nodo_raiz):
 
     while frontera:
         nodo_actual = frontera.pop()  # Sacar el último nodo (LIFO)
+
+        # Simular trabajo para mejorar la medición de tiempo
+        time.sleep(0.01)  # Retardo de 10ms
+
         hijos, node_id_counter = expandir_nodo(nodo_actual, node_id_counter, estados_generados)
         for hijo in hijos:
             all_nodes.append(hijo)
@@ -144,7 +148,6 @@ def dibujar_arbol(all_nodes, all_edges, soluciones):
 
     plt.close()
 
-
 def main():
     estado_inicial = (3, 3, 1, 0, 0)
     nodo_raiz = Nodo(estado_inicial, id=0)
@@ -170,6 +173,5 @@ def main():
     print(f"Tiempo total de ejecución: {tiempo_total:.4f} segundos")
     print(f"Memoria RAM total consumida: {memoria_consumida / 1024:.2f} bytes")
     
-   
 if __name__ == "__main__":
     main()

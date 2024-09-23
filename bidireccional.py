@@ -72,6 +72,7 @@ def bidireccional(nodo_inicial, nodo_final):
         nodos_visitados += 1
 
         acciones = generar_acciones(nodo_actual_inicial.estado)
+
         for accion in acciones:
             if accion not in explorado_inicial:
                 hijo = create_node(accion, padre=nodo_actual_inicial)
@@ -89,12 +90,16 @@ def bidireccional(nodo_inicial, nodo_final):
                     # Se encontró una conexión
                     return hijo, padres_final[accion], nodos_visitados
 
+        # Simulamos trabajo para mejorar la medición
+        time.sleep(0.01)  # Retardo de 10ms
+
         # Expandir desde el lado final
         nodo_actual_final = frontera_final.popleft()
         explorado_final.add(nodo_actual_final.estado)
         nodos_visitados += 1
 
         acciones = generar_acciones(nodo_actual_final.estado)
+
         for accion in acciones:
             if accion not in explorado_final:
                 hijo = create_node(accion, padre=nodo_actual_final)
@@ -197,7 +202,7 @@ def main():
     memoria_final = process.memory_info().rss / (1024 * 1024)  # Convertir a MB
 
     memoria_consumida = memoria_final - memoria_inicial
-    tiempo_ejecucion = (fin_tiempo - inicio_tiempo) * 1000  # Convertir a milisegundos
+    tiempo_ejecucion = (fin_tiempo - inicio_tiempo)  # Tiempo total de ejecución
 
     if solucion_desde_inicial and solucion_desde_final:
         camino_total = reconstruir_camino(solucion_desde_inicial, solucion_desde_final)
@@ -210,7 +215,7 @@ def main():
 
         print("\nMedidas de rendimiento:")
         print(f"- Nodos visitados: {nodos_visitados}")
-        print(f"- Tiempo de ejecución: {tiempo_ejecucion:.4f} ms")
+        print(f"- Tiempo de ejecución: {tiempo_ejecucion:.4f} segundos")
         print(f"- Memoria RAM consumida: {memoria_consumida:.4f} MB")
     else:
         print("No se encontró una solución.")

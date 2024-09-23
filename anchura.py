@@ -70,6 +70,10 @@ def bfs(nodo_raiz):
 
     while frontera:
         nodo_actual = frontera.popleft()
+        
+        # Agregar un pequeño retraso para simular trabajo
+        time.sleep(0.01)  # Retardo de 10ms
+        
         hijos, node_id_counter = expandir_nodo(nodo_actual, node_id_counter, estados_generados)
         for hijo in hijos:
             all_nodes.append(hijo)
@@ -121,8 +125,9 @@ def dibujar_arbol(all_nodes, all_edges, filename="anchura.png"):
 
     # Guardar el gráfico en un archivo
     plt.savefig(filename)
-    plt.close()  # Cerrar la figura para evitar sobrecarga de memoria
-
+    
+    plt.close() 
+   
 def main():
     estado_inicial = (3, 3, 1, 0, 0)
     nodo_raiz = Nodo(estado_inicial, id=0)
