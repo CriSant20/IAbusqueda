@@ -50,7 +50,6 @@ def expandir_nodo(nodo, node_id_counter, estados_generados):
         hijos.append(nuevo_nodo)
         node_id_counter += 1
     return hijos, node_id_counter
-
 def bfs(nodo_raiz):
     inicio_tiempo = time.time()
     proceso = psutil.Process()
@@ -58,9 +57,7 @@ def bfs(nodo_raiz):
 
     frontera = deque([nodo_raiz])
     estados_visitados = set()
-    estados_visitados.add(nodo_raiz.estado)
     estados_generados = set()
-    estados_generados.add(nodo_raiz.estado)
     nodos_visitados = 1
     node_id_counter = 1
 
@@ -70,21 +67,22 @@ def bfs(nodo_raiz):
 
     while frontera:
         nodo_actual = frontera.popleft()
-        
-        # Agregar un pequeño retraso para simular trabajo
         time.sleep(0.01)  # Retardo de 10ms
         
         hijos, node_id_counter = expandir_nodo(nodo_actual, node_id_counter, estados_generados)
         for hijo in hijos:
             all_nodes.append(hijo)
             all_edges.append((nodo_actual.id, hijo.id))
+
+            # Si el estado es válido, se debe continuar la exploración
             if hijo.valido:
                 if hijo.estado not in estados_visitados:
                     frontera.append(hijo)
                     estados_visitados.add(hijo.estado)
                     nodos_visitados += 1
-                    if hijo.estado == (0, 0, 0, 3, 3):
-                        soluciones.append(hijo)
+                if hijo.estado == (0, 0, 0, 3, 3):  # Condición de solución
+                    soluciones.append(hijo)  # Guardar todas las soluciones
+                    # No detenemos la búsqueda aquí para que encuentre más soluciones
 
     fin_tiempo = time.time()
     tiempo_total = fin_tiempo - inicio_tiempo

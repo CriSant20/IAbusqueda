@@ -16,7 +16,7 @@ def run_app_py(search_type):
         script_name, search_type_argument, image_name = search_type_map.get(search_type, ("anchura.py", "anchura", "anchura.png"))
 
         # Especificar la ruta completa de la carpeta donde se encuentran los scripts
-        script_path = os.path.join("C:/Users/moyol/OneDrive/Documentos/IA/BusquedasNoInformadas/IAbusqueda", script_name)
+        script_path = os.path.join("C:\\Users\\Personal\\Desktop\\IA_OvejasyLobos", script_name)
 
         # Verificar si el archivo existe antes de ejecutarlo
         if not os.path.isfile(script_path):
@@ -29,7 +29,7 @@ def run_app_py(search_type):
         )
 
         # Ruta completa de la imagen generada
-        image_path = os.path.join("C:/Users/moyol/OneDrive/Documentos/IA/BusquedasNoInformadas/IAbusqueda", image_name)
+        image_path = os.path.join("C:\\Users\\Personal\\Desktop\\IA_OvejasyLobos", image_name)
 
         return result.stdout, image_path  # Devuelve la salida del script y la ruta de la imagen
     except subprocess.CalledProcessError as e:
