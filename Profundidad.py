@@ -69,10 +69,8 @@ def dfs(nodo_raiz):
 
     while frontera:
         nodo_actual = frontera.pop()  # Sacar el último nodo (LIFO)
-
         # Simular trabajo para mejorar la medición de tiempo
         time.sleep(0.01)  # Retardo de 10ms
-
         hijos, node_id_counter = expandir_nodo(nodo_actual, node_id_counter, estados_generados)
         for hijo in hijos:
             all_nodes.append(hijo)
@@ -82,8 +80,12 @@ def dfs(nodo_raiz):
                     frontera.append(hijo)
                     estados_visitados.add(hijo.estado)
                     nodos_visitados += 1
+                    
+                    # Agregar solución y continuar buscando
                     if hijo.estado == (0, 0, 0, 3, 3):
                         soluciones.append(hijo)
+                        # Añadir todos los hijos a la frontera para seguir buscando
+                        frontera.extend(hijo.hijos)
 
     fin_tiempo = time.time()
     tiempo_total = fin_tiempo - inicio_tiempo
@@ -145,7 +147,6 @@ def dibujar_arbol(all_nodes, all_edges, soluciones):
 
     # Guardar el gráfico como archivo PNG
     plt.savefig("profundidad.png")
-
     plt.close()
 
 def main():

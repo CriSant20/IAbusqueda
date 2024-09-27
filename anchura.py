@@ -4,7 +4,6 @@ from collections import deque
 import time
 import psutil
 from io import BytesIO  # Para manejar la imagen en memoria
-
 class Nodo:
     def __init__(self, estado, padre=None, accion=None, id=None, valido=True):
         self.estado = estado
@@ -13,10 +12,8 @@ class Nodo:
         self.hijos = []
         self.id = id  # Identificador único para cada nodo
         self.valido = valido  # Indica si el estado es válido o no
-
     def agregar_hijo(self, hijo):
         self.hijos.append(hijo)
-
 def validar_estado(estado):
     o_izq, l_izq, b, o_der, l_der = estado
     if o_izq < 0 or l_izq < 0 or o_der < 0 or l_der < 0:
@@ -28,10 +25,8 @@ def validar_estado(estado):
     if (o_der > 0 and o_der < l_der):
         return False
     return True
-
 def generar_acciones():
     return [(1, 0), (2, 0), (0, 1), (0, 2), (1, 1)]
-
 def expandir_nodo(nodo, node_id_counter, estados_generados):
     acciones = generar_acciones()
     hijos = []
@@ -54,26 +49,21 @@ def bfs(nodo_raiz):
     inicio_tiempo = time.time()
     proceso = psutil.Process()
     memoria_inicial = proceso.memory_info().rss
-
     frontera = deque([nodo_raiz])
     estados_visitados = set()
     estados_generados = set()
     nodos_visitados = 1
     node_id_counter = 1
-
     all_nodes = [nodo_raiz]
     all_edges = []
     soluciones = []
-
     while frontera:
         nodo_actual = frontera.popleft()
         time.sleep(0.01)  # Retardo de 10ms
-        
         hijos, node_id_counter = expandir_nodo(nodo_actual, node_id_counter, estados_generados)
         for hijo in hijos:
             all_nodes.append(hijo)
             all_edges.append((nodo_actual.id, hijo.id))
-
             # Si el estado es válido, se debe continuar la exploración
             if hijo.valido:
                 if hijo.estado not in estados_visitados:
@@ -82,13 +72,11 @@ def bfs(nodo_raiz):
                     nodos_visitados += 1
                 if hijo.estado == (0, 0, 0, 3, 3):  # Condición de solución
                     soluciones.append(hijo)  # Guardar todas las soluciones
-                    # No detenemos la búsqueda aquí para que encuentre más soluciones
 
     fin_tiempo = time.time()
     tiempo_total = fin_tiempo - inicio_tiempo
     memoria_final = proceso.memory_info().rss
     memoria_consumida = memoria_final - memoria_inicial
-
     return soluciones, nodos_visitados, all_nodes, all_edges, memoria_consumida, tiempo_total
 
 def dibujar_arbol(all_nodes, all_edges, filename="anchura.png"):

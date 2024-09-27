@@ -65,6 +65,9 @@ def bidireccional(nodo_inicial, nodo_final):
     padres_inicial = {nodo_inicial.estado: nodo_inicial}
     padres_final = {nodo_final.estado: nodo_final}
 
+    process = psutil.Process()  # Medir el uso de memoria
+    memoria_inicial = process.memory_info().rss / (1024 * 1024)  # Convertir a MB
+
     while frontera_inicial and frontera_final:
         # Expandir desde el lado inicial
         nodo_actual_inicial = frontera_inicial.popleft()
@@ -88,6 +91,9 @@ def bidireccional(nodo_inicial, nodo_final):
 
                 if accion in padres_final:
                     # Se encontró una conexión
+                    memoria_final = process.memory_info().rss / (1024 * 1024)  # Convertir a MB
+                    memoria_consumida = memoria_final - memoria_inicial
+                    print(f"Memoria consumida al encontrar conexión: {memoria_consumida:.4f} MB")
                     return hijo, padres_final[accion], nodos_visitados
 
         # Simulamos trabajo para mejorar la medición
@@ -115,6 +121,8 @@ def bidireccional(nodo_inicial, nodo_final):
 
                 if accion in padres_inicial:
                     # Se encontró una conexión
+                    memoria_final = process.memory_info().rss / (1024 * 1024)  # Convertir a MB
+                    memoria_consumida = memoria_final - memoria_inicial
                     return padres_inicial[accion], hijo, nodos_visitados
 
     return None, None, nodos_visitados
@@ -206,24 +214,18 @@ def main():
 
     if solucion_desde_inicial and solucion_desde_final:
         camino_total = reconstruir_camino(solucion_desde_inicial, solucion_desde_final)
-        print("Se encontró una solución:")
-        print("Camino:")
-        for idx, estado in enumerate(camino_total):
-            o_izq, l_izq, b, o_der, l_der = estado
-            lado_barco = 'Izquierda' if b == 1 else 'Derecha'
-            print(f"Paso {idx + 1}: Ovejas Izq: {o_izq}, Lobos Izq: {l_izq}, Barco: {lado_barco}, Ovejas Der: {o_der}, Lobos Der: {l_der}")
+        print("Solución encontrada:")
+        for paso in camino_total:
+            print(paso)
 
-        print("\nMedidas de rendimiento:")
-        print(f"- Nodos visitados: {nodos_visitados}")
-        print(f"- Tiempo de ejecución: {tiempo_ejecucion:.4f} segundos")
-        print(f"- Memoria RAM consumida: {memoria_consumida:.4f} MB")
-    else:
-        print("No se encontró una solución.")
+    print(f"Nodos visitados: {nodos_visitados}")
+    print(f"Tiempo de ejecución: {tiempo_ejecucion:.4f} segundos")
+    print(f"Memoria consumida: {memoria_consumida:.4f} MB")
 
-    # Asignar posiciones a los nodos
+    # Asignar posiciones para los nodos antes de dibujar
     nodes_data = assign_positions(nodes_data)
 
-    # Dibujar el grafo
+    # Dibujar el árbol de búsqueda
     dibujar_arbol()
 
 if __name__ == "__main__":
